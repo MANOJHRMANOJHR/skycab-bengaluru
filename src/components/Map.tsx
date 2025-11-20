@@ -30,34 +30,48 @@ const Map = ({ onLocationSelect, startLocation, endLocation }: MapProps) => {
   const endMarker = useRef<L.Marker | null>(null);
   const routeLine = useRef<L.Polyline | null>(null);
 
+  // Effect for initializing the map and cleaning it up
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (mapContainer.current && !map.current) {
+      // Initialize map centered on Bengaluru
+      map.current = L.map(mapContainer.current).setView([12.9716, 77.5946], 12);
 
-    // Initialize map centered on Bengaluru
-    map.current = L.map(mapContainer.current).setView([12.9716, 77.5946], 12);
+      // Add tile layer
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '© OpenStreetMap contributors',
+      }).addTo(map.current);
+    }
 
-    // Add tile layer
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '© OpenStreetMap contributors',
-    }).addTo(map.current);
-
-    // Handle map clicks
-    map.current.on("click", async (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      
-      // Reverse geocoding to get location name (simplified - using coordinates as name for MVP)
-      const name = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      
-      onLocationSelect(selectionMode, { lat, lng, name });
-    });
-
+    // Cleanup function to run when the component unmounts
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
     };
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once
+
+  // Effect for handling map clicks, dependent on selectionMode
+  useEffect(() => {
+    if (!map.current) return;
+
+    const handleClick = async (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      // Reverse geocoding to get location name (simplified - using coordinates as name for MVP)
+      const name = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      onLocationSelect(selectionMode, { lat, lng, name });
+    };
+
+    map.current.on("click", handleClick);
+
+    // Cleanup function to remove the event listener
+    return () => {
+      if (map.current) {
+        map.current.off("click", handleClick);
+      }
+    };
+  }, [selectionMode, onLocationSelect]);
+
 
   // Update markers and route when locations change
   useEffect(() => {
@@ -69,8 +83,8 @@ const Map = ({ onLocationSelect, startLocation, endLocation }: MapProps) => {
         startMarker.current.setLatLng([startLocation.lat, startLocation.lng]);
       } else {
         const customIcon = L.divIcon({
-          html: `<div class="flex items-center justify-center w-10 h-10 bg-primary rounded-full shadow-glow border-2 border-white">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
+          html: `<div class=\"flex items-center justify-center w-10 h-10 bg-primary rounded-full shadow-glow border-2 border-white\">
+            <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"10\" r=\"3\"/><path d=\"M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z\"/></svg>
           </div>`,
           className: "custom-marker",
           iconSize: [40, 40],
@@ -89,8 +103,8 @@ const Map = ({ onLocationSelect, startLocation, endLocation }: MapProps) => {
         endMarker.current.setLatLng([endLocation.lat, endLocation.lng]);
       } else {
         const customIcon = L.divIcon({
-          html: `<div class="flex items-center justify-center w-10 h-10 bg-accent rounded-full shadow-glow border-2 border-white">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
+          html: `<div class=\"flex items-center justify-center w-10 h-10 bg-accent rounded-full shadow-glow border-2 border-white\">
+            <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"10\" r=\"3\"/><path d=\"M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z\"/></svg>
           </div>`,
           className: "custom-marker",
           iconSize: [40, 40],
