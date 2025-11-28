@@ -154,8 +154,8 @@ const Map = ({ onLocationSelect, startLocation, endLocation, stops, onAddStop, o
   }, [startLocation, endLocation, stops, onRemoveStop]);
 
   return (
-    <div className="relative w-full h-full">
-      <div ref={mapContainer} className="absolute inset-0 rounded-2xl overflow-hidden shadow-card" />
+    <div className="relative w-full h-full z-0">
+      <div ref={mapContainer} className="absolute inset-0 rounded-2xl overflow-hidden shadow-card z-0" />
       <div className="absolute top-4 left-4 z-[1000] flex gap-2">
         <button
           onClick={() => setSelectionMode("start")}
