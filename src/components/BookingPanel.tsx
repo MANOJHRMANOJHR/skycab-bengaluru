@@ -9,11 +9,10 @@ interface Location {
 }
 
 interface TaxiTier {
-  id: string;
+  id: number;
   name: string;
-  rate_per_km: number;
-  description: string;
-  max_passengers: number;
+  cost_per_km: number;
+  description: string | null;
 }
 
 interface BookingPanelProps {
@@ -100,7 +99,7 @@ const BookingPanel = ({
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Rate</span>
-            <span className="font-semibold">₹{selectedTier?.rate_per_km}/km</span>
+            <span className="font-semibold">₹{selectedTier?.cost_per_km}/km</span>
           </div>
           <div className="border-t border-primary/10 my-3" />
           <div className="flex justify-between items-center">
