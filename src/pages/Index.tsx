@@ -30,6 +30,7 @@ const Index = () => {
   const [fare, setFare] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [bookingId, setBookingId] = useState<number>(0);
+  const [taxiIdentifier, setTaxiIdentifier] = useState("");
   const bookingSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -123,7 +124,8 @@ const Index = () => {
     try {
       // Generate taxi identifier like SKY-4831
       const taxiId = `SKY-${Math.floor(1000 + Math.random() * 9000)}`;
-      
+      setTaxiIdentifier(taxiId);
+
       const { data, error } = await supabase
         .from("bookings")
         .insert({
@@ -166,6 +168,7 @@ const Index = () => {
     setFare(0);
     setShowSuccess(false);
     setBookingId(0);
+    setTaxiIdentifier("");
   };
 
   return (
@@ -223,6 +226,10 @@ const Index = () => {
         isOpen={showSuccess}
         onClose={resetBooking}
         bookingId={bookingId}
+        fare={fare}
+        taxiIdentifier={taxiIdentifier}
+        tierName={selectedTier?.name || ""}
+        distance={distance}
       />
     </div>
   );

@@ -1,18 +1,30 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, Plane } from "lucide-react";
+import { CheckCircle2, Clock, Hash, CircleDollarSign, Car, Award, Milestone } from "lucide-react";
 
 interface BookingSuccessProps {
   isOpen: boolean;
   onClose: () => void;
   bookingId: number;
+  fare: number;
+  taxiIdentifier: string;
+  tierName: string;
+  distance: number;
 }
 
-const BookingSuccess = ({ isOpen, onClose, bookingId }: BookingSuccessProps) => {
+const BookingSuccess = ({
+  isOpen,
+  onClose,
+  bookingId,
+  fare,
+  taxiIdentifier,
+  tierName,
+  distance,
+}: BookingSuccessProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
-        <div className="text-center py-6">
+        <div className="text-center py-6 max-h-[90vh] overflow-y-auto">
           <div className="flex justify-center mb-6">
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
@@ -27,14 +39,54 @@ const BookingSuccess = ({ isOpen, onClose, bookingId }: BookingSuccessProps) => 
             Your flying taxi is on its way
           </p>
 
-          <div className="space-y-4 mb-8">
+          <div className="space-y-4 mb-8 px-4">
             <div className="flex items-center gap-3 p-4 bg-secondary rounded-lg">
               <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
-                <Plane className="w-5 h-5 text-primary" />
+                <Hash className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
                 <div className="text-sm text-muted-foreground">Booking ID</div>
                 <div className="font-mono font-semibold">#{bookingId}</div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 p-4 bg-secondary rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+                <Car className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left flex-1">
+                <div className="text-sm text-muted-foreground">Taxi ID</div>
+                <div className="font-semibold">{taxiIdentifier}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-secondary rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+                <CircleDollarSign className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left flex-1">
+                <div className="text-sm text-muted-foreground">Fare</div>
+                <div className="font-semibold">${fare.toFixed(2)}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-secondary rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+                <Award className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left flex-1">
+                <div className="text-sm text-muted-foreground">Tier</div>
+                <div className="font-semibold">{tierName}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-secondary rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+                <Milestone className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left flex-1">
+                <div className="text-sm text-muted-foreground">Distance</div>
+                <div className="font-semibold">{distance.toFixed(2)} km</div>
               </div>
             </div>
 
@@ -49,20 +101,22 @@ const BookingSuccess = ({ isOpen, onClose, bookingId }: BookingSuccessProps) => 
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-primary/5 via-sky-cyan/5 to-accent/5 rounded-lg p-4 mb-6 border border-primary/10">
+          <div className="bg-gradient-to-r from-primary/5 via-sky-cyan/5 to-accent/5 rounded-lg p-4 mb-6 border border-primary/10 mx-4">
             <p className="text-sm text-muted-foreground">
               Your taxi will arrive at the pickup location shortly. 
               Please be ready at the designated spot.
             </p>
           </div>
 
-          <Button
-            onClick={onClose}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            size="lg"
-          >
-            Done
-          </Button>
+          <div className="px-4">
+            <Button
+              onClick={onClose}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              size="lg"
+            >
+              Done
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
