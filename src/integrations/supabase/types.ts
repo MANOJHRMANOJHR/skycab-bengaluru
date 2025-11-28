@@ -14,74 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      bookings: {
-        Row: {
-          created_at: string
-          distance: number
-          end_location: Json
-          fare: number
-          id: string
-          start_location: Json
-          status: string | null
-          tier_id: string
-        }
-        Insert: {
-          created_at?: string
-          distance: number
-          end_location: Json
-          fare: number
-          id?: string
-          start_location: Json
-          status?: string | null
-          tier_id: string
-        }
-        Update: {
-          created_at?: string
-          distance?: number
-          end_location?: Json
-          fare?: number
-          id?: string
-          start_location?: Json
-          status?: string | null
-          tier_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_tier_id_fkey"
-            columns: ["tier_id"]
-            isOneToOne: false
-            referencedRelation: "taxi_tiers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      taxi_tiers: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          max_passengers: number | null
-          name: string
-          rate_per_km: number
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          max_passengers?: number | null
-          name: string
-          rate_per_km: number
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          max_passengers?: number | null
-          name?: string
-          rate_per_km?: number
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
