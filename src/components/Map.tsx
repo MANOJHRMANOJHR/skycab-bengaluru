@@ -127,7 +127,7 @@ const Map = ({ onLocationSelect, startLocation, endLocation, stops, onAddStop, o
 
     const locations = [startLocation, ...stops, endLocation].filter(Boolean) as Location[];
     if (locations.length > 1) {
-      const latlngs = locations.map(loc => [loc.lat, loc.lng]);
+      const latlngs: L.LatLngExpression[] = locations.map(loc => [loc.lat, loc.lng] as L.LatLngTuple);
       if (routeLine.current) routeLine.current.setLatLngs(latlngs);
       else {
         routeLine.current = L.polyline(latlngs, {
