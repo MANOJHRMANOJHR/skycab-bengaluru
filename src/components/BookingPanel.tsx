@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Navigation, DollarSign, Plane } from "lucide-react";
+import { MapPin, Navigation, DollarSign, Plane, X, Plus } from "lucide-react";
 
 interface Location {
   lat: number;
@@ -19,6 +19,7 @@ interface TaxiTier {
 interface BookingPanelProps {
   startLocation: Location | null;
   endLocation: Location | null;
+  stops: Location[];
   selectedTier: TaxiTier | null;
   distance: number;
   fare: number;
@@ -28,6 +29,7 @@ interface BookingPanelProps {
 const BookingPanel = ({
   startLocation,
   endLocation,
+  stops,
   selectedTier,
   distance,
   fare,
@@ -37,10 +39,9 @@ const BookingPanel = ({
 
   return (
     <Card className="p-6 shadow-card sticky top-4">
-      <h2 className="text-2xl font-bold mb-6">Your Flight Details</h2>
+      <h2 className="text-2xl font-bold mb-6">Your Ride Details</h2>
 
       <div className="space-y-4 mb-6">
-        {/* Start Location */}
         <div className="flex items-start gap-3">
           <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
             <MapPin className="w-5 h-5 text-primary" />
@@ -53,7 +54,19 @@ const BookingPanel = ({
           </div>
         </div>
 
-        {/* End Location */}
+        {/* Stops */}
+        {stops.map((stop, index) => (
+          <div key={index} className="flex items-start gap-3 pl-5">
+             <div className="flex items-center justify-center w-10 h-10 bg-secondary/10 rounded-full">
+                <MapPin className="w-5 h-5 text-secondary" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm text-muted-foreground mb-1">{`Stop ${index + 1}`}</div>
+              <div className="font-medium">{stop.name}</div>
+            </div>
+          </div>
+        ))}
+
         <div className="flex items-start gap-3">
           <div className="flex items-center justify-center w-10 h-10 bg-accent/10 rounded-full">
             <Navigation className="w-5 h-5 text-accent" />
@@ -66,7 +79,6 @@ const BookingPanel = ({
           </div>
         </div>
 
-        {/* Tier Selection */}
         <div className="flex items-start gap-3">
           <div className="flex items-center justify-center w-10 h-10 bg-sky-cyan/10 rounded-full">
             <Plane className="w-5 h-5 text-sky-cyan" />
@@ -80,7 +92,6 @@ const BookingPanel = ({
         </div>
       </div>
 
-      {/* Distance & Fare */}
       {isComplete && (
         <div className="bg-gradient-to-br from-primary/5 to-sky-cyan/5 rounded-xl p-4 mb-6 border border-primary/10">
           <div className="flex justify-between items-center mb-2">
@@ -105,7 +116,7 @@ const BookingPanel = ({
         className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-glow transition-bounce hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         size="lg"
       >
-        {isComplete ? "Book Flying Taxi" : "Complete Details to Book"}
+        {isComplete ? "Book Your Ride" : "Complete Details to Book"}
       </Button>
 
       {isComplete && (

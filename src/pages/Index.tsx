@@ -24,6 +24,7 @@ interface TaxiTier {
 const Index = () => {
   const [startLocation, setStartLocation] = useState<Location | null>(null);
   const [endLocation, setEndLocation] = useState<Location | null>(null);
+  const [stops, setStops] = useState<Location[]>([]);
   const [selectedTier, setSelectedTier] = useState<TaxiTier | null>(null);
   const [tiers, setTiers] = useState<TaxiTier[]>([]);
   const [distance, setDistance] = useState(0);
@@ -32,7 +33,6 @@ const Index = () => {
   const [bookingId, setBookingId] = useState("");
   const bookingSectionRef = useRef<HTMLDivElement>(null);
 
-  // Fetch taxi tiers on mount
   useEffect(() => {
     fetchTiers();
   }, []);
@@ -54,31 +54,6 @@ const Index = () => {
     }
   };
 
-  // Calculate distance when both locations are set
-  useEffect(() => {
-    if (startLocation && endLocation) {
-      const dist = calculateDistance(
-        startLocation.lat,
-        startLocation.lng,
-        endLocation.lat,
-        endLocation.lng
-      );
-      setDistance(dist);
-    } else {
-      setDistance(0);
-    }
-  }, [startLocation, endLocation]);
-
-  // Calculate fare when distance or tier changes
-  useEffect(() => {
-    if (distance > 0 && selectedTier) {
-      const calculatedFare = distance * selectedTier.rate_per_km;
-      setFare(calculatedFare);
-    } else {
-      setFare(0);
-    }
-  }, [distance, selectedTier]);
-
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371; // Radius of the Earth in km
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -93,6 +68,33 @@ const Index = () => {
     return R * c;
   };
 
+  useEffect(() => {
+    if (startLocation && endLocation) {
+      const points = [startLocation, ...stops, endLocation];
+      let totalDistance = 0;
+      for (let i = 0; i < points.length - 1; i++) {
+        totalDistance += calculateDistance(
+          points[i].lat,
+          points[i].lng,
+          points[i + 1].lat,
+          points[i + 1].lng
+        );
+      }
+      setDistance(totalDistance);
+    } else {
+      setDistance(0);
+    }
+  }, [startLocation, endLocation, stops]);
+
+  useEffect(() => {
+    if (distance > 0 && selectedTier) {
+      const calculatedFare = distance * selectedTier.rate_per_km;
+      setFare(calculatedFare);
+    } else {
+      setFare(0);
+    }
+  }, [distance, selectedTier]);
+
   const handleLocationSelect = (type: "start" | "end", location: Location) => {
     if (type === "start") {
       setStartLocation(location);
@@ -101,6 +103,16 @@ const Index = () => {
       setEndLocation(location);
       toast.success("Destination set");
     }
+  };
+
+  const addStop = (location: Location) => {
+    setStops([...stops, location]);
+    toast.success("Stop added");
+  };
+
+  const removeStop = (index: number) => {
+    setStops(stops.filter((_, i) => i !== index));
+    toast.info("Stop removed");
   };
 
   const handleBooking = async () => {
@@ -115,6 +127,7 @@ const Index = () => {
         .insert({
           start_location: { lat: startLocation.lat, lng: startLocation.lng, name: startLocation.name },
           end_location: { lat: endLocation.lat, lng: endLocation.lng, name: endLocation.name },
+          // Stops are not saved in the database as per user request
           distance: Number(distance.toFixed(2)),
           tier_id: selectedTier.id,
           fare: Number(fare.toFixed(2)),
@@ -143,6 +156,7 @@ const Index = () => {
   const resetBooking = () => {
     setStartLocation(null);
     setEndLocation(null);
+    setStops([]);
     setSelectedTier(null);
     setDistance(0);
     setFare(0);
@@ -157,24 +171,25 @@ const Index = () => {
       <section ref={bookingSectionRef} className="py-16 px-4 bg-background">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Book Your Flight</h2>
+            <h2 className="text-4xl font-bold mb-4">Book Your Ride</h2>
             <p className="text-xl text-muted-foreground">
-              Select your locations and choose your preferred tier
+              Select your locations, add stops, and choose your preferred tier
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Map Section */}
             <div className="lg:col-span-2 space-y-8">
               <div className="h-[500px] rounded-2xl overflow-hidden shadow-card">
                 <Map
                   onLocationSelect={handleLocationSelect}
                   startLocation={startLocation}
                   endLocation={endLocation}
+                  stops={stops}
+                  onAddStop={addStop}
+                  onRemoveStop={removeStop}
                 />
               </div>
 
-              {/* Tier Selection */}
               <div>
                 <h3 className="text-2xl font-bold mb-6">Choose Your Tier</h3>
                 <TierSelector
@@ -185,11 +200,11 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Booking Panel */}
             <div className="lg:col-span-1">
               <BookingPanel
                 startLocation={startLocation}
                 endLocation={endLocation}
+                stops={stops}
                 selectedTier={selectedTier}
                 distance={distance}
                 fare={fare}

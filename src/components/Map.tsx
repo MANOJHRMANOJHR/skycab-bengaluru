@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin } from "lucide-react";
+import { MapPin, Plus, X } from "lucide-react";
 
 // Fix for default marker icons
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -16,165 +16,161 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-interface MapProps {
-  onLocationSelect: (type: "start" | "end", location: { lat: number; lng: number; name: string }) => void;
-  startLocation: { lat: number; lng: number; name: string } | null;
-  endLocation: { lat: number; lng: number; name: string } | null;
+interface Location {
+  lat: number;
+  lng: number;
+  name: string;
 }
 
-const Map = ({ onLocationSelect, startLocation, endLocation }: MapProps) => {
+interface MapProps {
+  onLocationSelect: (type: "start" | "end", location: Location) => void;
+  startLocation: Location | null;
+  endLocation: Location | null;
+  stops: Location[];
+  onAddStop: (location: Location) => void;
+  onRemoveStop: (index: number) => void;
+}
+
+const Map = ({ onLocationSelect, startLocation, endLocation, stops, onAddStop, onRemoveStop }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
-  const [selectionMode, setSelectionMode] = useState<"start" | "end">("start");
+  const [selectionMode, setSelectionMode] = useState<"start" | "end" | "stop">("start");
   const startMarker = useRef<L.Marker | null>(null);
   const endMarker = useRef<L.Marker | null>(null);
+  const stopMarkers = useRef<L.Marker[]>([]);
   const routeLine = useRef<L.Polyline | null>(null);
 
-  // Effect for initializing the map and cleaning it up
   useEffect(() => {
     if (mapContainer.current && !map.current) {
-      // Initialize map centered on Bengaluru
       map.current = L.map(mapContainer.current).setView([12.9716, 77.5946], 12);
-
-      // Add tile layer
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '© OpenStreetMap contributors',
+        attribution: "© OpenStreetMap contributors",
       }).addTo(map.current);
     }
-
-    // Cleanup function to run when the component unmounts
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
     };
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
 
-  // Effect for handling map clicks, dependent on selectionMode
   useEffect(() => {
     if (!map.current) return;
-
-    const handleClick = async (e: L.LeafletMouseEvent) => {
+    const handleClick = (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
-      // Reverse geocoding to get location name (simplified - using coordinates as name for MVP)
       const name = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      onLocationSelect(selectionMode, { lat, lng, name });
+      if (selectionMode === "stop") {
+        onAddStop({ lat, lng, name });
+      } else {
+        onLocationSelect(selectionMode, { lat, lng, name });
+      }
     };
-
     map.current.on("click", handleClick);
-
-    // Cleanup function to remove the event listener
     return () => {
       if (map.current) {
         map.current.off("click", handleClick);
       }
     };
-  }, [selectionMode, onLocationSelect]);
+  }, [selectionMode, onLocationSelect, onAddStop]);
 
-
-  // Update markers and route when locations change
   useEffect(() => {
     if (!map.current) return;
 
-    // Update start marker
+    const createMarkerIcon = (color: string) => L.divIcon({
+      html: `<div class="flex items-center justify-center w-10 h-10 bg-${color} rounded-full shadow-glow border-2 border-white"><MapPin class="w-5 h-5 text-white" /></div>`,
+      className: "custom-marker",
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+    });
+
     if (startLocation) {
-      if (startMarker.current) {
-        startMarker.current.setLatLng([startLocation.lat, startLocation.lng]);
-      } else {
-        const customIcon = L.divIcon({
-          html: `<div class=\"flex items-center justify-center w-10 h-10 bg-primary rounded-full shadow-glow border-2 border-white\">
-            <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"10\" r=\"3\"/><path d=\"M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z\"/></svg>
-          </div>`,
-          className: "custom-marker",
-          iconSize: [40, 40],
-          iconAnchor: [20, 40],
-        });
-        
-        startMarker.current = L.marker([startLocation.lat, startLocation.lng], { icon: customIcon })
+      if (startMarker.current) startMarker.current.setLatLng([startLocation.lat, startLocation.lng]);
+      else {
+        startMarker.current = L.marker([startLocation.lat, startLocation.lng], { icon: createMarkerIcon("primary") })
           .addTo(map.current)
           .bindPopup(`<b>Start:</b> ${startLocation.name}`);
       }
+    } else if (startMarker.current) {
+      startMarker.current.remove();
+      startMarker.current = null;
     }
 
-    // Update end marker
     if (endLocation) {
-      if (endMarker.current) {
-        endMarker.current.setLatLng([endLocation.lat, endLocation.lng]);
-      } else {
-        const customIcon = L.divIcon({
-          html: `<div class=\"flex items-center justify-center w-10 h-10 bg-accent rounded-full shadow-glow border-2 border-white\">
-            <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"10\" r=\"3\"/><path d=\"M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z\"/></svg>
-          </div>`,
-          className: "custom-marker",
-          iconSize: [40, 40],
-          iconAnchor: [20, 40],
-        });
-        
-        endMarker.current = L.marker([endLocation.lat, endLocation.lng], { icon: customIcon })
+      if (endMarker.current) endMarker.current.setLatLng([endLocation.lat, endLocation.lng]);
+      else {
+        endMarker.current = L.marker([endLocation.lat, endLocation.lng], { icon: createMarkerIcon("accent") })
           .addTo(map.current)
           .bindPopup(`<b>Destination:</b> ${endLocation.name}`);
       }
+    } else if (endMarker.current) {
+      endMarker.current.remove();
+      endMarker.current = null;
     }
 
-    // Draw route line
-    if (startLocation && endLocation) {
-      if (routeLine.current) {
-        routeLine.current.setLatLngs([
-          [startLocation.lat, startLocation.lng],
-          [endLocation.lat, endLocation.lng],
-        ]);
-      } else {
-        routeLine.current = L.polyline(
-          [
-            [startLocation.lat, startLocation.lng],
-            [endLocation.lat, endLocation.lng],
-          ],
-          {
-            color: "hsl(var(--primary))",
-            weight: 3,
-            opacity: 0.7,
-            dashArray: "10, 10",
+    // Handle stops
+    stopMarkers.current.forEach(marker => marker.remove());
+    stopMarkers.current = [];
+    stops.forEach((stop, index) => {
+      const stopIcon = L.divIcon({
+        html: `<div class="flex items-center justify-center w-8 h-8 bg-secondary rounded-full shadow-md border-2 border-white text-secondary-foreground font-bold">${index + 1}</div>`,
+        className: "custom-marker",
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+      });
+      const marker = L.marker([stop.lat, stop.lng], { icon: stopIcon })
+        .addTo(map.current!)
+        .bindPopup(`<b>Stop ${index + 1}:</b> ${stop.name}`);
+      marker.on('click', () => onRemoveStop(index));
+      stopMarkers.current.push(marker);
+    });
+
+    const locations = [startLocation, ...stops, endLocation].filter(Boolean) as Location[];
+    if (locations.length > 1) {
+      const latlngs = locations.map(loc => [loc.lat, loc.lng]);
+      if (routeLine.current) routeLine.current.setLatLngs(latlngs);
+      else {
+        routeLine.current = L.polyline(latlngs, {
+          color: "hsl(var(--primary))",
+          weight: 4,
+          opacity: 0.8,
+        }).addTo(map.current);
+
+        routeLine.current.on('click', (e) => {
+          if (selectionMode === 'stop') {
+            const { lat, lng } = e.latlng;
+            const name = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            onAddStop({ lat, lng, name });
           }
-        ).addTo(map.current);
-      }
+        });
 
-      // Fit bounds to show both markers
-      const bounds = L.latLngBounds(
-        [startLocation.lat, startLocation.lng],
-        [endLocation.lat, endLocation.lng]
-      );
+      }
+      const bounds = L.latLngBounds(latlngs);
       map.current.fitBounds(bounds, { padding: [50, 50] });
+    } else if (routeLine.current) {
+      routeLine.current.remove();
+      routeLine.current = null;
     }
-  }, [startLocation, endLocation]);
+  }, [startLocation, endLocation, stops, onRemoveStop]);
 
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="absolute inset-0 rounded-2xl overflow-hidden shadow-card" />
-      
-      {/* Selection Mode Toggle */}
       <div className="absolute top-4 left-4 z-[1000] flex gap-2">
         <button
           onClick={() => setSelectionMode("start")}
-          className={`px-4 py-2 rounded-full font-medium transition-smooth shadow-card ${
-            selectionMode === "start"
-              ? "bg-primary text-primary-foreground"
-              : "bg-white text-foreground hover:bg-secondary"
-          }`}
-        >
-          <MapPin className="w-4 h-4 inline mr-2" />
-          Set Start
+          className={`px-4 py-2 rounded-full font-medium transition-smooth shadow-card ${selectionMode === "start" ? "bg-primary text-primary-foreground" : "bg-white text-foreground hover:bg-secondary"}`}>
+          <MapPin className="w-4 h-4 inline mr-2" /> Set Start
         </button>
         <button
           onClick={() => setSelectionMode("end")}
-          className={`px-4 py-2 rounded-full font-medium transition-smooth shadow-card ${
-            selectionMode === "end"
-              ? "bg-accent text-accent-foreground"
-              : "bg-white text-foreground hover:bg-secondary"
-          }`}
-        >
-          <MapPin className="w-4 h-4 inline mr-2" />
-          Set Destination
+          className={`px-4 py-2 rounded-full font-medium transition-smooth shadow-card ${selectionMode === "end" ? "bg-accent text-accent-foreground" : "bg-white text-foreground hover:bg-secondary"}`}>
+          <MapPin className="w-4 h-4 inline mr-2" /> Set Destination
+        </button>
+        <button
+          onClick={() => setSelectionMode("stop")}
+          className={`px-4 py-2 rounded-full font-medium transition-smooth shadow-card ${selectionMode === "stop" ? "bg-secondary text-secondary-foreground" : "bg-white text-foreground hover:bg-secondary"}`}>
+          <Plus className="w-4 h-4 inline mr-2" /> Add Stop
         </button>
       </div>
     </div>
