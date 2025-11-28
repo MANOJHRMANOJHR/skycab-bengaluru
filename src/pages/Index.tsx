@@ -14,11 +14,10 @@ interface Location {
 }
 
 interface TaxiTier {
-  id: string;
+  id: number;
   name: string;
-  rate_per_km: number;
-  description: string;
-  max_passengers: number;
+  cost_per_km: number;
+  description: string | null;
 }
 
 const Index = () => {
@@ -30,7 +29,7 @@ const Index = () => {
   const [distance, setDistance] = useState(0);
   const [fare, setFare] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [bookingId, setBookingId] = useState("");
+  const [bookingId, setBookingId] = useState<number>(0);
   const bookingSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,7 +40,7 @@ const Index = () => {
     const { data, error } = await supabase
       .from("taxi_tiers")
       .select("*")
-      .order("rate_per_km", { ascending: true });
+      .order("cost_per_km", { ascending: true });
 
     if (error) {
       console.error("Error fetching tiers:", error);
@@ -88,7 +87,7 @@ const Index = () => {
 
   useEffect(() => {
     if (distance > 0 && selectedTier) {
-      const calculatedFare = distance * selectedTier.rate_per_km;
+      const calculatedFare = distance * selectedTier.cost_per_km;
       setFare(calculatedFare);
     } else {
       setFare(0);
@@ -122,16 +121,21 @@ const Index = () => {
     }
 
     try {
+      // Generate taxi identifier like SKY-4831
+      const taxiId = `SKY-${Math.floor(1000 + Math.random() * 9000)}`;
+      
       const { data, error } = await supabase
         .from("bookings")
         .insert({
-          start_location: { lat: startLocation.lat, lng: startLocation.lng, name: startLocation.name },
-          end_location: { lat: endLocation.lat, lng: endLocation.lng, name: endLocation.name },
-          // Stops are not saved in the database as per user request
-          distance: Number(distance.toFixed(2)),
+          start_lat: startLocation.lat,
+          start_lng: startLocation.lng,
+          dest_lat: endLocation.lat,
+          dest_lng: endLocation.lng,
+          distance_km: Number(distance.toFixed(2)),
           tier_id: selectedTier.id,
-          fare: Number(fare.toFixed(2)),
-          status: "confirmed",
+          fare_amount: Number(fare.toFixed(2)),
+          taxi_identifier: taxiId,
+          status: "CONFIRMED",
         })
         .select()
         .single();
@@ -161,7 +165,7 @@ const Index = () => {
     setDistance(0);
     setFare(0);
     setShowSuccess(false);
-    setBookingId("");
+    setBookingId(0);
   };
 
   return (

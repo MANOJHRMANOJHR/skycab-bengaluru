@@ -5,7 +5,7 @@ import { CheckCircle2, Clock, Plane } from "lucide-react";
 interface BookingSuccessProps {
   isOpen: boolean;
   onClose: () => void;
-  bookingId: string;
+  bookingId: number;
 }
 
 const BookingSuccess = ({ isOpen, onClose, bookingId }: BookingSuccessProps) => {
@@ -34,7 +34,7 @@ const BookingSuccess = ({ isOpen, onClose, bookingId }: BookingSuccessProps) => 
               </div>
               <div className="text-left flex-1">
                 <div className="text-sm text-muted-foreground">Booking ID</div>
-                <div className="font-mono font-semibold">{bookingId.slice(0, 8)}</div>
+                <div className="font-mono font-semibold">#{bookingId}</div>
               </div>
             </div>
 

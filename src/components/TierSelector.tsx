@@ -2,11 +2,10 @@ import { Card } from "@/components/ui/card";
 import { Check, Zap, Crown, Circle } from "lucide-react";
 
 interface TaxiTier {
-  id: string;
+  id: number;
   name: string;
-  rate_per_km: number;
-  description: string;
-  max_passengers: number;
+  cost_per_km: number;
+  description: string | null;
 }
 
 interface TierSelectorProps {
@@ -84,18 +83,12 @@ const TierSelector = ({ tiers, selectedTier, onSelectTier }: TierSelectorProps) 
               </div>
               
               <p className="text-muted-foreground text-sm mb-4">
-                {tier.description}
+                {tier.description || 'Flying taxi service'}
               </p>
               
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">₹{tier.rate_per_km}</span>
+                <span className="text-3xl font-bold">₹{tier.cost_per_km}</span>
                 <span className="text-muted-foreground">/km</span>
-              </div>
-              
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="text-sm text-muted-foreground">
-                  Up to {tier.max_passengers} passengers
-                </div>
               </div>
             </div>
           </Card>
